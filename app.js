@@ -191,6 +191,45 @@ function addItem() {
   updateMetrics();
 }
 
+// Add item from search results to planning list
+function addFromSearch(sourceType, index, title, price, url, store) {
+  // Clean up price string and extract numeric value
+  const cleanPrice = price.replace(/[^\d.-]/g, '');
+  const numericPrice = parseFloat(cleanPrice) || 0;
+  
+  // Create new item object
+  const newItem = {
+    name: title,
+    price: numericPrice,
+    source: url || store,
+    priority: 'medium', // default priority
+    notes: url ? `Found via search - ${url}` : 'Found via search',
+    status: 'planned'
+  };
+  
+  // Add to items array
+  items.push(newItem);
+  saveItems();
+  
+  // Show success message
+  const button = event.target;
+  const originalText = button.textContent;
+  button.textContent = 'Added!';
+  button.style.backgroundColor = 'var(--success)';
+  button.disabled = true;
+  
+  setTimeout(() => {
+    button.textContent = originalText;
+    button.style.backgroundColor = '';
+    button.disabled = false;
+  }, 2000);
+  
+  // Update metrics if dashboard is visible
+  if (document.getElementById('dashboard').style.display !== 'none') {
+    updateMetrics();
+  }
+}
+
 function saveEditItem(idx) {
   const name = document.getElementById('itemName').value;
   const price = parseFloat(document.getElementById('itemPrice').value);
@@ -249,65 +288,68 @@ function updateMetrics() {
 
 
 
-// Real API search: AliExpress DataHub (RapidAPI) for itemId, DummyJSON fallback for text
+// Real API search: AliExpress DataHub (RapidAPI) for search queries
 async function searchAliExpress(query) {
   const resultsDiv = document.getElementById('searchResults');
   resultsDiv.innerHTML = 'Searching for: ' + query + '...';
 
-  // If query looks like an AliExpress itemId (all digits, 10+ chars), use DataHub
-  if (/^\d{10,}$/.test(query.trim())) {
-    // Calls backend proxy for security
-    const url = `/api/aliexpress?itemId=${query.trim()}`;
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('API error');
-      const data = await response.json();
-      if (data.data && data.data.item && data.data.item.title) {
-        const item = data.data.item;
-        resultsDiv.innerHTML = `
-          <div class="glass item-row" style="align-items:flex-start;">
-            <div style="flex:1;">
-              <b>${item.title}</b><br>
-              <span style="font-size:0.95em;color:#aaa;">${item.sellerName || ''}</span><br>
-              <span style="font-size:1.1em;color:var(--primary);">${item.salePrice || ''}</span>
-              <div style="font-size:0.9em;color:#aaa;">${item.description || ''}</div>
-              <a href="${item.detailUrl}" target="_blank" style="color:var(--primary);font-size:0.95em;">View on AliExpress</a>
-            </div>
-            <img src="${item.imageUrl || ''}" alt="${item.title}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-left:1em;">
-          </div>
-        `;
-      } else {
-        resultsDiv.innerHTML = '<div class="glass">No product found for this itemId.</div>';
-      }
-    } catch (error) {
-      resultsDiv.innerHTML = '<div class="glass">API error. Try again later.</div>';
-    }
-    return;
-  }
-
-  // Otherwise, fallback to DummyJSON demo search
-  fetch(`https://dummyjson.com/products/search?q=${encodeURIComponent(query)}`)
-    .then(r => r.json())
-    .then(data => {
-      if (!data.products || !data.products.length) {
-        resultsDiv.innerHTML = '<div class="glass">No results found.</div>';
-        return;
-      }
-      resultsDiv.innerHTML = data.products.map(prod =>
+  try {
+    // Call backend proxy for security
+    const url = `/api/aliexpress?q=${encodeURIComponent(query.trim())}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) throw new Error('API error');
+    
+    const data = await response.json();
+    
+    if (data.result && data.result.resultList && data.result.resultList.length > 0) {
+      resultsDiv.innerHTML = data.result.resultList.map((item, index) =>
         `<div class="glass item-row" style="align-items:flex-start;">
           <div style="flex:1;">
-            <b>${prod.title}</b><br>
-            <span style="font-size:0.95em;color:#aaa;">${prod.brand}</span><br>
-            <span style="font-size:1.1em;color:var(--primary);">$${prod.price}</span>
-            <div style="font-size:0.9em;color:#aaa;">${prod.description}</div>
+            <b>${item.item.title}</b><br>
+            <span style="font-size:0.95em;color:#aaa;">${item.item.store || ''}</span><br>
+            <span style="font-size:1.1em;color:var(--primary);">${item.item.sku.def.promotionPrice || item.item.sku.def.price}</span>
+            <div style="font-size:0.9em;color:#aaa;">Rating: ${item.item.evaluate ? item.item.evaluate.starRating : 'N/A'}</div>
+            <div style="margin-top:0.5em;">
+              <a href="${item.item.itemDetailUrl}" target="_blank" style="color:var(--primary);font-size:0.95em;">View on AliExpress</a>
+              <button onclick="addFromSearch('aliexpress', ${index}, '${item.item.title.replace(/'/g, "\\'")}', '${item.item.sku.def.promotionPrice || item.item.sku.def.price}', '${item.item.itemDetailUrl}', '${item.item.store || 'AliExpress'}')" class="btn" style="margin-left:1em;font-size:0.85em;">Add to Planning</button>
+            </div>
           </div>
-          <img src="${prod.thumbnail}" alt="${prod.title}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-left:1em;">
+          <img src="${item.item.imageUrl}" alt="${item.item.title}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-left:1em;">
         </div>`
       ).join('');
-    })
-    .catch(() => {
-      resultsDiv.innerHTML = '<div class="glass">API error. Try again later.</div>';
-    });
+    } else {
+      resultsDiv.innerHTML = '<div class="glass">No products found.</div>';
+    }
+  } catch (error) {
+    console.error('Search error:', error);
+    // Fallback to DummyJSON demo search
+    fetch(`https://dummyjson.com/products/search?q=${encodeURIComponent(query)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!data.products || !data.products.length) {
+          resultsDiv.innerHTML = '<div class="glass">No results found.</div>';
+          return;
+        }
+        resultsDiv.innerHTML = data.products.map((prod, index) =>
+          `<div class="glass item-row" style="align-items:flex-start;">
+            <div style="flex:1;">
+              <b>${prod.title}</b><br>
+              <span style="font-size:0.95em;color:#aaa;">${prod.brand}</span><br>
+              <span style="font-size:1.1em;color:var(--primary);">$${prod.price}</span>
+              <div style="font-size:0.9em;color:#aaa;">${prod.description}</div>
+              <div style="margin-top:0.5em;">
+                <button onclick="addFromSearch('dummy', ${index}, '${prod.title.replace(/'/g, "\\'")}', '$${prod.price}', '', '${prod.brand || 'DummyJSON'}')" class="btn" style="font-size:0.85em;">Add to Planning</button>
+              </div>
+            </div>
+            <img src="${prod.thumbnail}" alt="${prod.title}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-left:1em;">
+          </div>`
+        ).join('');
+      })
+      .catch(() => {
+        resultsDiv.innerHTML = '<div class="glass">API error. Try again later.</div>';
+      });
+  }
 }
 
 // CSS animation helper
