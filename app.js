@@ -1,4 +1,9 @@
 
+// Currency formatting for Namibian Dollars (NAD)
+function formatCurrency(amount) {
+  if (amount === null || amount === undefined || isNaN(amount)) return 'N$0.00';
+  return `N$${parseFloat(amount).toFixed(2)}`;
+}
 
 // Topbar rendering with transparent SVG icons
 function renderTopbar(active = 'dashboard') {
@@ -49,7 +54,7 @@ function showDashboard() {
       planned.slice(0, 6).map((item, i) =>
         `<div class="bento-card glass">
           <div class="bento-title">${item.name}</div>
-          <div class="bento-price">${item.price ? '$'+item.price : ''}</div>
+          <div class="bento-price">${item.price ? formatCurrency(item.price) : ''}</div>
           <div class="bento-meta">${item.source ? 'Source: '+item.source : ''}</div>
           <div class="bento-notes">${item.notes ? item.notes : ''}</div>
           <div class="bento-actions">
@@ -63,16 +68,94 @@ function showDashboard() {
   }
   el.innerHTML = `
     <div class="glass metric-card animate-slide-in">
-      <h2>Welcome to Spenda Dashboard!</h2>
+      <h2>Spenda Analytics Dashboard</h2>
       <div style="margin: 1em 0;">
         <button class="btn neon" id="addItemBtn">Add Item</button>
       </div>
+      
+      <!-- Primary Metrics -->
       <div class="metrics-row">
         <div class="metric-card glass glow-blue">Total Items<br><span id="totalItems">0</span></div>
         <div class="metric-card glass glow-green">Bought<br><span id="boughtItems">0</span></div>
         <div class="metric-card glass glow-orange">Planned<br><span id="plannedItems">0</span></div>
+        <div class="metric-card glass glow-purple">Total Value<br><span id="totalValue">N$0.00</span></div>
       </div>
-      <h3 style="margin-top:2em;margin-bottom:0.5em;font-size:1.15em;font-weight:600;">Planned Items</h3>
+      
+      <!-- Financial Analytics -->
+      <div class="analytics-section">
+        <h3>💰 Financial Overview</h3>
+        <div class="metrics-row">
+          <div class="metric-card glass">
+            <div class="metric-label">Money Spent</div>
+            <div class="metric-value" id="moneySpent">N$0.00</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">Money Planned</div>
+            <div class="metric-value" id="moneyPlanned">N$0.00</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">Average Item Price</div>
+            <div class="metric-value" id="avgPrice">N$0.00</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">Most Expensive</div>
+            <div class="metric-value" id="mostExpensive">-</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Shopping Analytics -->
+      <div class="analytics-section">
+        <h3>📊 Shopping Insights</h3>
+        <div class="metrics-row">
+          <div class="metric-card glass">
+            <div class="metric-label">Completion Rate</div>
+            <div class="metric-value" id="completionRate">0%</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">High Priority Items</div>
+            <div class="metric-value" id="highPriorityCount">0</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">Top Source</div>
+            <div class="metric-value" id="topSource">-</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">Recent Activity</div>
+            <div class="metric-value" id="recentActivity">0 items</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Priority Breakdown -->
+      <div class="analytics-section">
+        <h3>🎯 Priority Breakdown</h3>
+        <div class="priority-chart" id="priorityChart">
+          <div class="priority-bar">
+            <div class="priority-label">High Priority</div>
+            <div class="priority-progress">
+              <div class="priority-fill high" id="highPriorityBar" style="width: 0%"></div>
+              <span class="priority-count" id="highPriorityText">0</span>
+            </div>
+          </div>
+          <div class="priority-bar">
+            <div class="priority-label">Medium Priority</div>
+            <div class="priority-progress">
+              <div class="priority-fill medium" id="mediumPriorityBar" style="width: 0%"></div>
+              <span class="priority-count" id="mediumPriorityText">0</span>
+            </div>
+          </div>
+          <div class="priority-bar">
+            <div class="priority-label">Low Priority</div>
+            <div class="priority-progress">
+              <div class="priority-fill low" id="lowPriorityBar" style="width: 0%"></div>
+              <span class="priority-count" id="lowPriorityText">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <h3 style="margin-top:2em;margin-bottom:0.5em;font-size:1.15em;font-weight:600;">📋 Planned Items</h3>
       ${bento}
     </div>
   `;
@@ -153,7 +236,7 @@ function showAddItemModal(editIdx = null) {
     <h2>${isEdit ? 'Edit Item' : 'Add New Item'}</h2>
     <form id="addItemForm">
       <input type="text" id="itemName" placeholder="Item Name" value="${item.name || ''}" required><br>
-      <input type="number" id="itemPrice" placeholder="Estimated Price" value="${item.price || ''}" required><br>
+      <input type="number" id="itemPrice" placeholder="Estimated Price (NAD)" value="${item.price || ''}" required><br>
       <input type="text" id="itemSource" placeholder="Source (e.g. AliExpress)" value="${item.source || ''}"><br>
       <select id="itemPriority">
         <option value="low" ${item.priority==='low'?'selected':''}>Low</option>
@@ -248,7 +331,7 @@ function renderItemList() {
   ul.innerHTML = items.length ? items.map((item, i) =>
     `<li class="glass item-row">
       <div>
-        <b>${item.name}</b> - ${item.price} (${item.priority})
+        <b>${item.name}</b> - ${formatCurrency(item.price)} (${item.priority})
         <span style="font-size:0.9em;color:#aaa;">${item.status==='bought'?'✔️ Bought':''}</span>
         <div style="font-size:0.9em;color:#aaa;">${item.source ? 'Source: '+item.source : ''}</div>
         <div style="font-size:0.9em;color:#aaa;">${item.notes ? 'Notes: '+item.notes : ''}</div>
@@ -281,9 +364,71 @@ function removeItem(idx) {
 }
 
 function updateMetrics() {
-  document.getElementById('totalItems').textContent = items.length;
-  document.getElementById('boughtItems').textContent = items.filter(i => i.status === 'bought').length;
-  document.getElementById('plannedItems').textContent = items.filter(i => i.status === 'planned').length;
+  // Basic counts
+  const totalItems = items.length;
+  const boughtItems = items.filter(i => i.status === 'bought');
+  const plannedItems = items.filter(i => i.status === 'planned');
+  
+  // Update basic metrics
+  document.getElementById('totalItems').textContent = totalItems;
+  document.getElementById('boughtItems').textContent = boughtItems.length;
+  document.getElementById('plannedItems').textContent = plannedItems.length;
+  
+  // Financial calculations
+  const totalValue = items.reduce((sum, item) => sum + (item.price || 0), 0);
+  const moneySpent = boughtItems.reduce((sum, item) => sum + (item.price || 0), 0);
+  const moneyPlanned = plannedItems.reduce((sum, item) => sum + (item.price || 0), 0);
+  const avgPrice = totalItems > 0 ? totalValue / totalItems : 0;
+  const mostExpensiveItem = items.reduce((max, item) => 
+    (item.price || 0) > (max.price || 0) ? item : max, {});
+  
+  // Update financial metrics
+  document.getElementById('totalValue').textContent = formatCurrency(totalValue);
+  document.getElementById('moneySpent').textContent = formatCurrency(moneySpent);
+  document.getElementById('moneyPlanned').textContent = formatCurrency(moneyPlanned);
+  document.getElementById('avgPrice').textContent = formatCurrency(avgPrice);
+  document.getElementById('mostExpensive').textContent = mostExpensiveItem.name ? 
+    `${mostExpensiveItem.name} (${formatCurrency(mostExpensiveItem.price)})` : '-';
+  
+  // Shopping insights
+  const completionRate = totalItems > 0 ? (boughtItems.length / totalItems * 100) : 0;
+  const highPriorityItems = items.filter(i => i.priority === 'high');
+  const sourceCounts = {};
+  items.forEach(item => {
+    if (item.source) {
+      const source = item.source.includes('http') ? 'Online Store' : item.source;
+      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+    }
+  });
+  const topSource = Object.keys(sourceCounts).reduce((a, b) => 
+    sourceCounts[a] > sourceCounts[b] ? a : b, '-');
+  
+  // Update shopping insights
+  document.getElementById('completionRate').textContent = `${completionRate.toFixed(1)}%`;
+  document.getElementById('highPriorityCount').textContent = highPriorityItems.length;
+  document.getElementById('topSource').textContent = topSource === '-' ? 'None' : topSource;
+  document.getElementById('recentActivity').textContent = `${plannedItems.length} planned`;
+  
+  // Priority breakdown
+  const priorities = {
+    high: items.filter(i => i.priority === 'high').length,
+    medium: items.filter(i => i.priority === 'medium').length,
+    low: items.filter(i => i.priority === 'low').length
+  };
+  
+  const maxPriority = Math.max(priorities.high, priorities.medium, priorities.low, 1);
+  
+  // Update priority chart
+  if (document.getElementById('highPriorityBar')) {
+    document.getElementById('highPriorityBar').style.width = `${(priorities.high / maxPriority) * 100}%`;
+    document.getElementById('highPriorityText').textContent = priorities.high;
+    
+    document.getElementById('mediumPriorityBar').style.width = `${(priorities.medium / maxPriority) * 100}%`;
+    document.getElementById('mediumPriorityText').textContent = priorities.medium;
+    
+    document.getElementById('lowPriorityBar').style.width = `${(priorities.low / maxPriority) * 100}%`;
+    document.getElementById('lowPriorityText').textContent = priorities.low;
+  }
 }
 
 
@@ -331,20 +476,21 @@ async function searchAliExpress(query) {
           resultsDiv.innerHTML = '<div class="glass">No results found.</div>';
           return;
         }
-        resultsDiv.innerHTML = data.products.map((prod, index) =>
-          `<div class="glass item-row" style="align-items:flex-start;">
+        resultsDiv.innerHTML = data.products.map((prod, index) => {
+          const nadPrice = prod.price * 18; // Convert USD to NAD (approximate rate)
+          return `<div class="glass item-row" style="align-items:flex-start;">
             <div style="flex:1;">
               <b>${prod.title}</b><br>
               <span style="font-size:0.95em;color:#aaa;">${prod.brand}</span><br>
-              <span style="font-size:1.1em;color:var(--primary);">$${prod.price}</span>
+              <span style="font-size:1.1em;color:var(--primary);">${formatCurrency(nadPrice)}</span>
               <div style="font-size:0.9em;color:#aaa;">${prod.description}</div>
               <div style="margin-top:0.5em;">
-                <button onclick="addFromSearch('dummy', ${index}, '${prod.title.replace(/'/g, "\\'")}', '$${prod.price}', '', '${prod.brand || 'DummyJSON'}')" class="btn" style="font-size:0.85em;">Add to Planning</button>
+                <button onclick="addFromSearch('dummy', ${index}, '${prod.title.replace(/'/g, "\\'")}', '${nadPrice}', '', '${prod.brand || 'DummyJSON'}')" class="btn" style="font-size:0.85em;">Add to Planning</button>
               </div>
             </div>
             <img src="${prod.thumbnail}" alt="${prod.title}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-left:1em;">
-          </div>`
-        ).join('');
+          </div>`;
+        }).join('');
       })
       .catch(() => {
         resultsDiv.innerHTML = '<div class="glass">API error. Try again later.</div>';

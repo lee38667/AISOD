@@ -48,7 +48,9 @@ app.get('/api/test', async (req, res) => {
       return res.status(500).json({ error: 'Fetch not available' });
     }
     
-    const url = 'https://aliexpress-datahub.p.rapidapi.com/item_search?q=iphone&page=1&sort=default';
+    // Allow custom search query or default to 'laptop' for testing
+    const testQuery = req.query.q || 'laptop';
+    const url = `https://aliexpress-datahub.p.rapidapi.com/item_search?q=${encodeURIComponent(testQuery)}&page=1&sort=default`;
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -57,7 +59,7 @@ app.get('/api/test', async (req, res) => {
       }
     });
     const data = await response.json();
-    res.json({ success: true, data });
+    res.json({ success: true, testQuery, data });
   } catch (err) {
     console.error('Test API Error:', err);
     res.json({ success: false, error: err.message });
@@ -66,5 +68,7 @@ app.get('/api/test', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`AliExpress proxy running on port ${PORT}`);
-  console.log(`Test the API at: http://localhost:${PORT}/api/test`);
+  console.log(`Search API: http://localhost:${PORT}/api/aliexpress?q=YOUR_SEARCH_TERM`);
+  console.log(`Test API: http://localhost:${PORT}/api/test?q=YOUR_SEARCH_TERM`);
+  console.log(`Example: http://localhost:${PORT}/api/test?q=headphones`);
 });

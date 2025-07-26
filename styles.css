@@ -555,9 +555,137 @@ li {
   box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
 }
 
+/* Analytics Dashboard Styles */
+.analytics-section {
+  margin: 2em 0;
+  padding: 1.5em;
+  background: rgba(24,26,32,0.5);
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+}
+
+.analytics-section h3 {
+  font-size: 1.2em;
+  font-weight: 600;
+  margin-bottom: 1em;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.metric-label {
+  font-size: 0.9em;
+  color: var(--silver);
+  opacity: 0.8;
+  margin-bottom: 0.3em;
+}
+
+.metric-value {
+  font-size: 1.4em;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.glow-purple {
+  box-shadow: 0 0 8px 1px var(--accent);
+}
+
+/* Priority Chart Styles */
+.priority-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.priority-bar {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+}
+
+.priority-label {
+  width: 120px;
+  font-size: 0.9em;
+  color: var(--silver);
+  opacity: 0.9;
+}
+
+.priority-progress {
+  flex: 1;
+  height: 24px;
+  background: rgba(35,36,58,0.6);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+}
+
+.priority-fill {
+  height: 100%;
+  border-radius: 11px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.priority-fill.high {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+.priority-fill.medium {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+
+.priority-fill.low {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+}
+
+.priority-count {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8em;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Enhanced metric cards for analytics */
+.metric-card.glass {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card.glass:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(108, 99, 255, 0.15);
+}
+
 @media (max-width: 700px) {
   #main-layout { flex-direction: column; }
   .sidebar { width: 100%; min-height: unset; position: static; }
   #main-content { padding: 1em 2vw; }
   .metrics-row { flex-direction: column; gap: 1em; }
+  
+  .analytics-section {
+    padding: 1em;
+    margin: 1em 0;
+  }
+  
+  .priority-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5em;
+  }
+  
+  .priority-label {
+    width: auto;
+  }
+  
+  .priority-progress {
+    width: 100%;
+  }
 }
