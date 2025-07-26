@@ -664,6 +664,135 @@ li {
   box-shadow: 0 8px 32px rgba(108, 99, 255, 0.15);
 }
 
+/* Pie Chart Styles */
+.pie-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5em;
+  margin: 1.5em 0;
+}
+
+.pie-chart-card {
+  padding: 1.5em;
+  min-height: 300px;
+}
+
+.pie-chart-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.pie-chart-title {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 1em;
+  text-align: center;
+}
+
+.pie-chart-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1em;
+  flex: 1;
+}
+
+.pie-chart {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.pie-chart-empty {
+  text-align: center;
+  color: var(--silver);
+  opacity: 0.6;
+  font-style: italic;
+  padding: 2em;
+}
+
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  min-width: 200px;
+}
+
+.pie-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.9em;
+}
+
+.pie-legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.pie-legend-label {
+  color: var(--foreground);
+}
+
+/* Insights Grid */
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5em;
+  margin: 1.5em 0;
+}
+
+.insight-card {
+  padding: 1.5em;
+  border-left: 4px solid var(--primary);
+}
+
+.insight-card h4 {
+  color: var(--primary);
+  margin-bottom: 0.5em;
+  font-size: 1em;
+}
+
+.insight-card p {
+  color: var(--foreground);
+  opacity: 0.9;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Metric sublabels */
+.metric-sublabel {
+  font-size: 0.8em;
+  color: var(--silver);
+  opacity: 0.7;
+  margin-top: 0.3em;
+}
+
+/* Responsive adjustments for analytics */
+@media (max-width: 900px) {
+  .pie-charts-grid {
+    grid-template-columns: 1fr;
+    gap: 1em;
+  }
+  
+  .pie-chart-card {
+    padding: 1em;
+    min-height: 250px;
+  }
+  
+  .insights-grid {
+    grid-template-columns: 1fr;
+    gap: 1em;
+  }
+  
+  .insight-card {
+    padding: 1em;
+  }
+}
+
 @media (max-width: 700px) {
   #main-layout { flex-direction: column; }
   .sidebar { width: 100%; min-height: unset; position: static; }

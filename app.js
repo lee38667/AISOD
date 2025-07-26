@@ -5,12 +5,84 @@ function formatCurrency(amount) {
   return `N$${parseFloat(amount).toFixed(2)}`;
 }
 
+// Pie chart creation function
+function createPieChart(containerId, data, title) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  if (total === 0) {
+    container.innerHTML = `<div class="pie-chart-empty">No data to display</div>`;
+    return;
+  }
+  
+  let currentAngle = 0;
+  const radius = 80;
+  const centerX = 100;
+  const centerY = 100;
+  
+  const segments = data.map(item => {
+    const percentage = (item.value / total) * 100;
+    const angle = (item.value / total) * 360;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + angle;
+    
+    const x1 = centerX + radius * Math.cos((startAngle * Math.PI) / 180);
+    const y1 = centerY + radius * Math.sin((startAngle * Math.PI) / 180);
+    const x2 = centerX + radius * Math.cos((endAngle * Math.PI) / 180);
+    const y2 = centerY + radius * Math.sin((endAngle * Math.PI) / 180);
+    
+    const largeArc = angle > 180 ? 1 : 0;
+    const pathData = `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+    
+    currentAngle += angle;
+    
+    return {
+      path: pathData,
+      color: item.color,
+      label: item.label,
+      value: item.value,
+      percentage: percentage.toFixed(1)
+    };
+  });
+  
+  const svg = `
+    <svg width="200" height="200" viewBox="0 0 200 200" class="pie-chart">
+      ${segments.map(segment => 
+        `<path d="${segment.path}" fill="${segment.color}" stroke="var(--card-border)" stroke-width="2" opacity="0.9"/>`
+      ).join('')}
+    </svg>
+  `;
+  
+  const legend = `
+    <div class="pie-legend">
+      ${segments.map(segment => 
+        `<div class="pie-legend-item">
+          <div class="pie-legend-color" style="background-color: ${segment.color}"></div>
+          <span class="pie-legend-label">${segment.label}: ${segment.value} (${segment.percentage}%)</span>
+        </div>`
+      ).join('')}
+    </div>
+  `;
+  
+  container.innerHTML = `
+    <div class="pie-chart-container">
+      <h4 class="pie-chart-title">${title}</h4>
+      <div class="pie-chart-content">
+        ${svg}
+        ${legend}
+      </div>
+    </div>
+  `;
+}
+
 // Topbar rendering with transparent SVG icons
 function renderTopbar(active = 'dashboard') {
   const navs = [
     { id: 'dashboard', label: 'Dashboard', icon: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><rect x="3" y="11" width="7" height="10" rx="2" fill="none" stroke="currentColor" opacity="0.7"/><rect x="14" y="3" width="7" height="18" rx="2" fill="none" stroke="currentColor" opacity="0.7"/></svg>` },
     { id: 'items', label: 'My Items', icon: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2" fill="none" stroke="currentColor" opacity="0.7"/><path d="M16 3v4M8 3v4" stroke="currentColor" opacity="0.7"/></svg>` },
     { id: 'search', label: 'Search', icon: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" opacity="0.7"/><line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" opacity="0.7"/></svg>` },
+    { id: 'analytics', label: 'Analytics', icon: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M3 3v18h18" stroke="currentColor" opacity="0.7"/><path d="M7 12l4-4 4 4 4-4" stroke="currentColor" opacity="0.7"/></svg>` },
     { id: 'settings', label: 'Settings', icon: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" opacity="0.7"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09A1.65 1.65 0 0 0 9 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09c.2.63.2 1.31 0 1.94z" fill="none" stroke="currentColor" opacity="0.7"/></svg>` }
   ];
   const navLinks = document.getElementById('nav-links');
@@ -30,6 +102,7 @@ function hideAllPages() {
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('items').style.display = 'none';
   document.getElementById('search').style.display = 'none';
+  document.getElementById('analytics').style.display = 'none';
   document.getElementById('settings').style.display = 'none';
 }
 
@@ -39,6 +112,7 @@ function navigate(page) {
   if (page === 'dashboard') showDashboard();
   if (page === 'items') showItems();
   if (page === 'search') showSearch();
+  if (page === 'analytics') showAnalytics();
   if (page === 'settings') showSettings();
 }
 
@@ -198,6 +272,133 @@ function showSearch() {
   };
 }
 
+// Analytics page rendering
+function showAnalytics() {
+  const el = document.getElementById('analytics');
+  el.style.display = '';
+  el.innerHTML = `
+    <div class="glass animate-slide-in">
+      <h2>📊 Advanced Analytics</h2>
+      
+      <!-- Primary KPIs -->
+      <div class="analytics-section">
+        <h3>🎯 Key Performance Indicators</h3>
+        <div class="metrics-row">
+          <div class="metric-card glass glow-blue">
+            <div class="metric-label">Total Items</div>
+            <div class="metric-value" id="analytics-totalItems">0</div>
+          </div>
+          <div class="metric-card glass glow-green">
+            <div class="metric-label">Completion Rate</div>
+            <div class="metric-value" id="analytics-completionRate">0%</div>
+          </div>
+          <div class="metric-card glass glow-purple">
+            <div class="metric-label">Total Value</div>
+            <div class="metric-value" id="analytics-totalValue">N$0.00</div>
+          </div>
+          <div class="metric-card glass glow-orange">
+            <div class="metric-label">Average Price</div>
+            <div class="metric-value" id="analytics-avgPrice">N$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pie Charts Section -->
+      <div class="analytics-section">
+        <h3>📈 Data Visualization</h3>
+        <div class="pie-charts-grid">
+          <div class="pie-chart-card glass">
+            <div id="statusPieChart"></div>
+          </div>
+          <div class="pie-chart-card glass">
+            <div id="priorityPieChart"></div>
+          </div>
+          <div class="pie-chart-card glass">
+            <div id="sourcePieChart"></div>
+          </div>
+          <div class="pie-chart-card glass">
+            <div id="priceRangePieChart"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Breakdown -->
+      <div class="analytics-section">
+        <h3>💰 Financial Analytics</h3>
+        <div class="metrics-row">
+          <div class="metric-card glass">
+            <div class="metric-label">Money Spent</div>
+            <div class="metric-value" id="analytics-moneySpent">N$0.00</div>
+            <div class="metric-sublabel">Items purchased</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">Money Planned</div>
+            <div class="metric-value" id="analytics-moneyPlanned">N$0.00</div>
+            <div class="metric-sublabel">Future purchases</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">Most Expensive</div>
+            <div class="metric-value" id="analytics-mostExpensive">-</div>
+            <div class="metric-sublabel">Highest priced item</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">Budget Progress</div>
+            <div class="metric-value" id="analytics-budgetProgress">-</div>
+            <div class="metric-sublabel">Spending vs Planning</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shopping Behavior -->
+      <div class="analytics-section">
+        <h3>🛒 Shopping Behavior</h3>
+        <div class="metrics-row">
+          <div class="metric-card glass">
+            <div class="metric-label">High Priority Items</div>
+            <div class="metric-value" id="analytics-highPriority">0</div>
+            <div class="metric-sublabel">Urgent purchases</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">Top Source</div>
+            <div class="metric-value" id="analytics-topSource">-</div>
+            <div class="metric-sublabel">Most used store</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">Items This Month</div>
+            <div class="metric-value" id="analytics-thisMonth">0</div>
+            <div class="metric-sublabel">Recent activity</div>
+          </div>
+          <div class="metric-card glass">
+            <div class="metric-label">Purchase Rate</div>
+            <div class="metric-value" id="analytics-purchaseRate">0%</div>
+            <div class="metric-sublabel">Buy vs Plan ratio</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trends and Insights -->
+      <div class="analytics-section">
+        <h3>📈 Insights & Trends</h3>
+        <div class="insights-grid">
+          <div class="insight-card glass">
+            <h4>💡 Shopping Insight</h4>
+            <p id="analytics-insight1">Add more items to see insights</p>
+          </div>
+          <div class="insight-card glass">
+            <h4>🎯 Recommendation</h4>
+            <p id="analytics-insight2">Start planning your purchases</p>
+          </div>
+          <div class="insight-card glass">
+            <h4>📊 Trend</h4>
+            <p id="analytics-insight3">Track your spending patterns</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  updateAnalytics();
+}
+
 // Settings page rendering
 function showSettings() {
   const el = document.getElementById('settings');
@@ -310,6 +511,11 @@ function addFromSearch(sourceType, index, title, price, url, store) {
   // Update metrics if dashboard is visible
   if (document.getElementById('dashboard').style.display !== 'none') {
     updateMetrics();
+  }
+  
+  // Update analytics if analytics page is visible
+  if (document.getElementById('analytics').style.display !== 'none') {
+    updateAnalytics();
   }
 }
 
@@ -429,6 +635,154 @@ function updateMetrics() {
     document.getElementById('lowPriorityBar').style.width = `${(priorities.low / maxPriority) * 100}%`;
     document.getElementById('lowPriorityText').textContent = priorities.low;
   }
+}
+
+// Advanced analytics function for the dedicated analytics page
+function updateAnalytics() {
+  if (document.getElementById('analytics').style.display === 'none') return;
+  
+  // Basic counts
+  const totalItems = items.length;
+  const boughtItems = items.filter(i => i.status === 'bought');
+  const plannedItems = items.filter(i => i.status === 'planned');
+  
+  // Financial calculations
+  const totalValue = items.reduce((sum, item) => sum + (item.price || 0), 0);
+  const moneySpent = boughtItems.reduce((sum, item) => sum + (item.price || 0), 0);
+  const moneyPlanned = plannedItems.reduce((sum, item) => sum + (item.price || 0), 0);
+  const avgPrice = totalItems > 0 ? totalValue / totalItems : 0;
+  const completionRate = totalItems > 0 ? (boughtItems.length / totalItems * 100) : 0;
+  
+  // Update KPIs
+  document.getElementById('analytics-totalItems').textContent = totalItems;
+  document.getElementById('analytics-completionRate').textContent = `${completionRate.toFixed(1)}%`;
+  document.getElementById('analytics-totalValue').textContent = formatCurrency(totalValue);
+  document.getElementById('analytics-avgPrice').textContent = formatCurrency(avgPrice);
+  
+  // Update financial metrics
+  document.getElementById('analytics-moneySpent').textContent = formatCurrency(moneySpent);
+  document.getElementById('analytics-moneyPlanned').textContent = formatCurrency(moneyPlanned);
+  
+  const mostExpensiveItem = items.reduce((max, item) => 
+    (item.price || 0) > (max.price || 0) ? item : max, {});
+  document.getElementById('analytics-mostExpensive').textContent = mostExpensiveItem.name ? 
+    `${mostExpensiveItem.name}` : '-';
+  
+  const budgetProgress = moneyPlanned > 0 ? `${(moneySpent / (moneySpent + moneyPlanned) * 100).toFixed(1)}%` : '-';
+  document.getElementById('analytics-budgetProgress').textContent = budgetProgress;
+  
+  // Shopping behavior
+  const highPriorityItems = items.filter(i => i.priority === 'high');
+  document.getElementById('analytics-highPriority').textContent = highPriorityItems.length;
+  
+  const sourceCounts = {};
+  items.forEach(item => {
+    if (item.source) {
+      const source = item.source.includes('http') ? 'Online Store' : item.source;
+      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+    }
+  });
+  const topSource = Object.keys(sourceCounts).reduce((a, b) => 
+    sourceCounts[a] > sourceCounts[b] ? a : b, '-');
+  document.getElementById('analytics-topSource').textContent = topSource === '-' ? 'None' : topSource;
+  
+  document.getElementById('analytics-thisMonth').textContent = plannedItems.length;
+  const purchaseRate = totalItems > 0 ? (boughtItems.length / totalItems * 100) : 0;
+  document.getElementById('analytics-purchaseRate').textContent = `${purchaseRate.toFixed(1)}%`;
+  
+  // Create pie charts
+  // 1. Status Distribution
+  const statusData = [
+    { label: 'Bought', value: boughtItems.length, color: '#22c55e' },
+    { label: 'Planned', value: plannedItems.length, color: '#f59e0b' }
+  ];
+  createPieChart('statusPieChart', statusData, 'Purchase Status');
+  
+  // 2. Priority Distribution
+  const priorityData = [
+    { label: 'High', value: items.filter(i => i.priority === 'high').length, color: '#ef4444' },
+    { label: 'Medium', value: items.filter(i => i.priority === 'medium').length, color: '#f59e0b' },
+    { label: 'Low', value: items.filter(i => i.priority === 'low').length, color: '#22c55e' }
+  ];
+  createPieChart('priorityPieChart', priorityData, 'Priority Distribution');
+  
+  // 3. Source Distribution
+  const sourceData = Object.keys(sourceCounts).map((source, index) => ({
+    label: source,
+    value: sourceCounts[source],
+    color: ['#6c63ff', '#a084e8', '#22c55e', '#f59e0b', '#ef4444'][index % 5]
+  }));
+  createPieChart('sourcePieChart', sourceData.length ? sourceData : [{ label: 'No Sources', value: 1, color: '#6b7280' }], 'Source Distribution');
+  
+  // 4. Price Range Distribution
+  const priceRanges = {
+    'N$0-100': items.filter(i => (i.price || 0) <= 100).length,
+    'N$101-500': items.filter(i => (i.price || 0) > 100 && (i.price || 0) <= 500).length,
+    'N$501-1000': items.filter(i => (i.price || 0) > 500 && (i.price || 0) <= 1000).length,
+    'N$1000+': items.filter(i => (i.price || 0) > 1000).length
+  };
+  const priceRangeData = Object.keys(priceRanges).map((range, index) => ({
+    label: range,
+    value: priceRanges[range],
+    color: ['#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'][index]
+  })).filter(item => item.value > 0);
+  createPieChart('priceRangePieChart', priceRangeData.length ? priceRangeData : [{ label: 'No Items', value: 1, color: '#6b7280' }], 'Price Range Distribution');
+  
+  // Generate insights
+  generateInsights();
+}
+
+// Generate intelligent insights based on user data
+function generateInsights() {
+  const totalItems = items.length;
+  const boughtItems = items.filter(i => i.status === 'bought');
+  const highPriorityItems = items.filter(i => i.priority === 'high');
+  const avgPrice = totalItems > 0 ? items.reduce((sum, item) => sum + (item.price || 0), 0) / totalItems : 0;
+  
+  let insight1 = "Add more items to see insights";
+  let insight2 = "Start planning your purchases";
+  let insight3 = "Track your spending patterns";
+  
+  if (totalItems > 0) {
+    const completionRate = (boughtItems.length / totalItems * 100);
+    
+    if (completionRate > 70) {
+      insight1 = `Great job! You've completed ${completionRate.toFixed(1)}% of your planned purchases.`;
+    } else if (completionRate > 30) {
+      insight1 = `You're making progress with ${completionRate.toFixed(1)}% completion rate. Keep going!`;
+    } else {
+      insight1 = `You have ${totalItems - boughtItems.length} items still to purchase. Time to start shopping!`;
+    }
+    
+    if (highPriorityItems.length > 0) {
+      insight2 = `You have ${highPriorityItems.length} high-priority items that need attention.`;
+    } else if (avgPrice > 500) {
+      insight2 = `Your average item price is ${formatCurrency(avgPrice)}. Consider budgeting carefully.`;
+    } else {
+      insight2 = `Your spending looks well-balanced with an average of ${formatCurrency(avgPrice)} per item.`;
+    }
+    
+    const sourceCounts = {};
+    items.forEach(item => {
+      if (item.source) {
+        const source = item.source.includes('http') ? 'Online Store' : item.source;
+        sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+      }
+    });
+    
+    const topSource = Object.keys(sourceCounts).reduce((a, b) => 
+      sourceCounts[a] > sourceCounts[b] ? a : b, '');
+    
+    if (topSource) {
+      insight3 = `${topSource} is your most used source with ${sourceCounts[topSource]} items.`;
+    } else {
+      insight3 = `Consider adding source information to track where you shop most.`;
+    }
+  }
+  
+  document.getElementById('analytics-insight1').textContent = insight1;
+  document.getElementById('analytics-insight2').textContent = insight2;
+  document.getElementById('analytics-insight3').textContent = insight3;
 }
 
 
