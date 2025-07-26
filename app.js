@@ -112,23 +112,33 @@ function showSettings() {
   `;
 }
 
-// Add Item Modal
-function showAddItemModal() {
+
+// --- Item Management with localStorage, edit, bought ---
+let items = JSON.parse(localStorage.getItem('spenda_items') || '[]');
+let editIndex = null;
+
+function saveItems() {
+  localStorage.setItem('spenda_items', JSON.stringify(items));
+}
+
+function showAddItemModal(editIdx = null) {
   const overlay = document.getElementById('modal-overlay');
   const modal = document.getElementById('modal');
+  const isEdit = editIdx !== null;
+  const item = isEdit ? items[editIdx] : { name: '', price: '', source: '', priority: 'medium', notes: '', status: 'planned' };
   modal.innerHTML = `
-    <h2>Add New Item</h2>
+    <h2>${isEdit ? 'Edit Item' : 'Add New Item'}</h2>
     <form id="addItemForm">
-      <input type="text" id="itemName" placeholder="Item Name" required><br>
-      <input type="number" id="itemPrice" placeholder="Estimated Price" required><br>
-      <input type="text" id="itemSource" placeholder="Source (e.g. AliExpress)"><br>
+      <input type="text" id="itemName" placeholder="Item Name" value="${item.name || ''}" required><br>
+      <input type="number" id="itemPrice" placeholder="Estimated Price" value="${item.price || ''}" required><br>
+      <input type="text" id="itemSource" placeholder="Source (e.g. AliExpress)" value="${item.source || ''}"><br>
       <select id="itemPriority">
-        <option value="low">Low</option>
-        <option value="medium" selected>Medium</option>
-        <option value="high">High</option>
+        <option value="low" ${item.priority==='low'?'selected':''}>Low</option>
+        <option value="medium" ${item.priority==='medium'?'selected':''}>Medium</option>
+        <option value="high" ${item.priority==='high'?'selected':''}>High</option>
       </select><br>
-      <textarea id="itemNotes" placeholder="Notes"></textarea><br>
-      <button type="submit" class="btn neon">Add</button>
+      <textarea id="itemNotes" placeholder="Notes">${item.notes||''}</textarea><br>
+      <button type="submit" class="btn neon">${isEdit ? 'Save' : 'Add'}</button>
       <button type="button" class="btn" id="closeModalBtn">Cancel</button>
     </form>
   `;
@@ -136,7 +146,8 @@ function showAddItemModal() {
   document.getElementById('closeModalBtn').onclick = hideModal;
   document.getElementById('addItemForm').onsubmit = function(e) {
     e.preventDefault();
-    addItem();
+    if (isEdit) saveEditItem(editIdx);
+    else addItem();
     hideModal();
   };
 }
@@ -145,8 +156,6 @@ function hideModal() {
   document.getElementById('modal-overlay').style.display = 'none';
 }
 
-// Item storage and rendering
-let items = [];
 function addItem() {
   const name = document.getElementById('itemName').value;
   const price = parseFloat(document.getElementById('itemPrice').value);
@@ -154,6 +163,19 @@ function addItem() {
   const priority = document.getElementById('itemPriority').value;
   const notes = document.getElementById('itemNotes').value;
   items.push({ name, price, source, priority, notes, status: 'planned' });
+  saveItems();
+  renderItemList();
+  updateMetrics();
+}
+
+function saveEditItem(idx) {
+  const name = document.getElementById('itemName').value;
+  const price = parseFloat(document.getElementById('itemPrice').value);
+  const source = document.getElementById('itemSource').value;
+  const priority = document.getElementById('itemPriority').value;
+  const notes = document.getElementById('itemNotes').value;
+  items[idx] = { ...items[idx], name, price, source, priority, notes };
+  saveItems();
   renderItemList();
   updateMetrics();
 }
@@ -163,14 +185,35 @@ function renderItemList() {
   if (!ul) return;
   ul.innerHTML = items.length ? items.map((item, i) =>
     `<li class="glass item-row">
-      <b>${item.name}</b> - ${item.price} (${item.priority})
-      <button onclick="removeItem(${i})" class="btn">Remove</button>
+      <div>
+        <b>${item.name}</b> - ${item.price} (${item.priority})
+        <span style="font-size:0.9em;color:#aaa;">${item.status==='bought'?'✔️ Bought':''}</span>
+        <div style="font-size:0.9em;color:#aaa;">${item.source ? 'Source: '+item.source : ''}</div>
+        <div style="font-size:0.9em;color:#aaa;">${item.notes ? 'Notes: '+item.notes : ''}</div>
+      </div>
+      <div>
+        <button onclick="editItem(${i})" class="btn">Edit</button>
+        <button onclick="markBought(${i})" class="btn">${item.status==='bought'?'Unmark':'Bought'}</button>
+        <button onclick="removeItem(${i})" class="btn">Remove</button>
+      </div>
     </li>`
   ).join('') : '<li>No items yet.</li>';
 }
 
+function editItem(idx) {
+  showAddItemModal(idx);
+}
+
+function markBought(idx) {
+  items[idx].status = items[idx].status === 'bought' ? 'planned' : 'bought';
+  saveItems();
+  renderItemList();
+  updateMetrics();
+}
+
 function removeItem(idx) {
   items.splice(idx, 1);
+  saveItems();
   renderItemList();
   updateMetrics();
 }
@@ -181,14 +224,33 @@ function updateMetrics() {
   document.getElementById('plannedItems').textContent = items.filter(i => i.status === 'planned').length;
 }
 
-// AliExpress API search (mocked)
+
+// Real API search (DummyJSON for demo)
 function searchAliExpress(query) {
   const resultsDiv = document.getElementById('searchResults');
-  resultsDiv.innerHTML = 'Searching AliExpress for: ' + query + '...';
-  // Example: fetch from a real API endpoint here
-  setTimeout(() => {
-    resultsDiv.innerHTML = `<div class='glass'>No real API call (demo only). Query: <b>${query}</b></div>`;
-  }, 1000);
+  resultsDiv.innerHTML = 'Searching for: ' + query + '...';
+  fetch(`https://dummyjson.com/products/search?q=${encodeURIComponent(query)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.products || !data.products.length) {
+        resultsDiv.innerHTML = '<div class="glass">No results found.</div>';
+        return;
+      }
+      resultsDiv.innerHTML = data.products.map(prod =>
+        `<div class="glass item-row" style="align-items:flex-start;">
+          <div style="flex:1;">
+            <b>${prod.title}</b><br>
+            <span style="font-size:0.95em;color:#aaa;">${prod.brand}</span><br>
+            <span style="font-size:1.1em;color:var(--primary);">$${prod.price}</span>
+            <div style="font-size:0.9em;color:#aaa;">${prod.description}</div>
+          </div>
+          <img src="${prod.thumbnail}" alt="${prod.title}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-left:1em;">
+        </div>`
+      ).join('');
+    })
+    .catch(() => {
+      resultsDiv.innerHTML = '<div class="glass">API error. Try again later.</div>';
+    });
 }
 
 // CSS animation helper
